@@ -37,7 +37,12 @@ async function main() {
   const signer = await initializeKeypair(connection);
   console.log("Public key:", signer.publicKey.toBase58());
 
-  await pingProgram(connection, signer);
+  await sendSol(
+    connection,
+    0.1 * Web3.LAMPORTS_PER_SOL,
+    Web3.Keypair.generate().publicKey,
+    signer
+  );
 }
 
 async function airdropSolIfNeeded(
@@ -79,6 +84,32 @@ async function pingProgram(connection: Web3.Connection, payer: Web3.Keypair) {
       },
     ],
     programId: PROGRAM_ID,
+  });
+
+  transaction.add(instruction);
+
+  const transactionSignature = await Web3.sendAndConfirmTransaction(
+    connection,
+    transaction,
+    [payer]
+  );
+
+  console.log(
+    `Transaction: https://explorer.solana.com/tx/${transactionSignature}?cluster=devnet`
+  );
+}
+
+async function sendSol(
+  connection: Web3.Connection,
+  amount: number,
+  receiver: Web3.PublicKey,
+  payer: Web3.Keypair
+) {
+  const transaction = new Web3.Transaction();
+  const instruction = Web3.SystemProgram.transfer({
+    fromPubkey: payer.publicKey,
+    toPubkey: receiver,
+    lamports: amount,
   });
 
   transaction.add(instruction);
